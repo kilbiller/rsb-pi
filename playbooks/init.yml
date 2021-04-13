@@ -1,0 +1,53 @@
+---
+
+- hosts: raspberries
+  gather_facts: false
+  tasks:
+    - name: Set hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+      notify: reboot
+
+    - name: Add my ssh key
+      authorized_key:
+        user: ubuntu
+        key: https://github.com/kilbiller.keys
+      notify: restart ssh
+
+    - name: Disable poe hat fan
+      blockinfile:
+        block: "{{ lookup('file', './init/usercfg.txt') }}"
+        path: /boot/firmware/usercfg.txt
+        create: yes
+      become: yes
+      notify: reboot
+
+    - name: Disable password authentication
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: "PasswordAuthentication no"
+        state: present
+        validate: /usr/sbin/sshd -T -f %s
+      become: yes
+      notify: restart ssh
+
+    - name: Disable root login
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: "PermitRootLogin no"
+        state: present
+        validate: /usr/sbin/sshd -T -f %s
+      become: yes
+      notify: restart ssh
+
+  handlers:
+    - name: reboot
+      reboot:
+      become: yes
+    - name: restart ssh
+      service:
+        name: sshd
+        state: restarted
+      become: yes
