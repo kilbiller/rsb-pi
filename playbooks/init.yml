@@ -3,6 +3,11 @@
 - hosts: raspberries
   name: Init rapsberries
   gather_facts: false
+  vars:
+    default_password: "ubuntu"
+  vars_prompt:
+    - name: password
+      prompt: What is your password?
   tasks:
     - name: "Check if host is reachable"
       wait_for:
@@ -14,16 +19,22 @@
       name: "Try first login and change the password"
       delegate_to: localhost
       expect:
-        command: sshpass -p {{ ansible_password }} ssh {{ ansible_ssh_common_args }} {{ ansible_user }}@{{ ansible_host }}
+        command: sshpass -p {{ default_password }} ssh {{ ansible_ssh_common_args }} {{ ansible_user }}@{{ ansible_host }}
         timeout: 10
         responses:
-          "Current password:": "{{ ansible_password }}"
-          "New password:": "{{ ansible_password }}"
-          "Retype new password:": "{{ ansible_password }}"
+          "Current password:": "{{ default_password }}"
+          "New password:": "{{ password }}"
+          "Retype new password:": "{{ password }}"
+
+    - when: connect_rs is unreachable
+      name: "Change ssh password"
+      set_fact:
+        ansible_password: "{{ password }}"
 
     - name: Set hostname
       hostname:
         name: "{{ inventory_hostname }}"
+      become: yes
       notify: reboot
 
     - name: Add my ssh key
