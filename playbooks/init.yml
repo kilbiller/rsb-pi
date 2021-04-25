@@ -51,6 +51,18 @@
       become: yes
       notify: reboot
 
+    - name: Enable some cgroup for kubernetes
+      replace:
+        path: /boot/firmware/cmdline.txt
+        regexp: '^([\w](?!.*\b{{ item }}\b).*)$'
+        replace: '\1 {{ item }}'
+      loop:
+        - "cgroup_enable=cpuset"
+        - "cgroup_memory=1"
+        - "cgroup_enable=memory"
+      become: yes
+      notify: reboot
+
     - name: Disable password authentication
       lineinfile:
         dest: /etc/ssh/sshd_config
