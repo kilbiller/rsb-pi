@@ -107,11 +107,17 @@
         port: "443"
       become: yes
 
-    - name: Allow routing between ips from router
+    - name: Allow requests from home network
       community.general.ufw:
         rule: allow
-        route: yes
-        to: "192.168.1.0/24"
+        direction: in
+        from: "192.168.1.0/24"
+      become: yes
+
+    - name: Allow routed requests by default
+      community.general.ufw:
+        default: allow
+        direction: routed
       become: yes
 
     - name: Enable ufw
