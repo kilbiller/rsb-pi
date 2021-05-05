@@ -56,9 +56,9 @@
       become: yes
       notify: restart ssh
 
-    - name: Allow port 22
+    - name: Allow & Limit port 22
       community.general.ufw:
-        rule: allow
+        rule: limit
         direction: in
         proto: tcp
         port: "22"
